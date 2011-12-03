@@ -26,11 +26,7 @@
 	        <CheckBoxPreference
 	            android:title="instantMessage"
 	            android:defaultValue="true"
-	            android:key="instantMessage" />
-	        <CheckBoxPreference
-	            android:title="Job"
-	            android:defaultValue="true"
-	            android:key="jobTitle" />
+	            android:key="instant_message" />
 	        <CheckBoxPreference
 	            android:title="Nickname"
 	            android:defaultValue="true"
@@ -39,10 +35,6 @@
 	            android:title="Note"
 	            android:defaultValue="true"
 	            android:key="note" />
-	        <CheckBoxPreference
-	            android:title="Organization"
-	            android:defaultValue="true"
-	            android:key="organization" />
 		</PreferenceCategory>
 	</PreferenceScreen>
 </PreferenceScreen>
