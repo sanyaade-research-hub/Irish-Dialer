@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Preferences">
+	<PreferenceScreen
+        android:title="Filter fields selection"
+        android:summary="Choose on which contact information you want to apply your search query">
+		<PreferenceCategory android:title="Main fields">
+	        <CheckBoxPreference
+	            android:title="Full Name"
+	            android:defaultValue="true"
+	            android:key="fullName" />
+	        <CheckBoxPreference
+	            android:title="Emails"
+	            android:defaultValue="true"
+	            android:key="email" />
+	        <CheckBoxPreference
+	            android:title="Phone numbers"
+	            android:defaultValue="true"
+	            android:key="phone" />
+		</PreferenceCategory>
+		<PreferenceCategory android:title="Other fields">
+		    <CheckBoxPreference
+	            android:title="Websites"
+	            android:defaultValue="true"
+	            android:key="url" />
+	        <CheckBoxPreference
+	            android:title="instantMessage"
+	            android:defaultValue="true"
+	            android:key="instantMessage" />
+	        <CheckBoxPreference
+	            android:title="Job"
+	            android:defaultValue="true"
+	            android:key="jobTitle" />
+	        <CheckBoxPreference
+	            android:title="Nickname"
+	            android:defaultValue="true"
+	            android:key="nickname" />
+	        <CheckBoxPreference
+	            android:title="Note"
+	            android:defaultValue="true"
+	            android:key="note" />
+	        <CheckBoxPreference
+	            android:title="Organization"
+	            android:defaultValue="true"
+	            android:key="organization" />
+		</PreferenceCategory>
+	</PreferenceScreen>
+</PreferenceScreen>
