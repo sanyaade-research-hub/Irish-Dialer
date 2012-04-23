@@ -1,25 +1,24 @@
 package com.prevost.irishdialer;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 
-public class Contact {
+public class Contact implements IContact{
 
 	protected ArrayList<String> _infos = null; 
 	protected String _displayName = null;
-	protected int _id = -1;
+	protected String _id = null;
 	
-	public String getDisplayName() {
+	public String getFullName() {
 		return _displayName;
 	}
 	
-	public int getId() {
+	public String getId() {
 		return _id;
 	}
 	
@@ -27,26 +26,25 @@ public class Contact {
 		return _infos;
 	}
 	
+	public ArrayList<String> getFields() {
+		ArrayList<String> res = this.getInfos();
+		res.add(this.getId());
+		return res;
+	}
+	
 	public Contact(int id, String displayName, ArrayList<String> contactInfos) {
 		_infos = contactInfos;
 		_displayName = displayName;
-		_id = id;
+		_id = Integer.toString(id);
 	}
 	
-	public boolean match(AbstractMatch match) {
-		for (String s : _infos) {
-			if (match.match(s)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public static ArrayList<String> getInfosFromCursorAndPreferences(ContentResolver cr, Context context, Cursor cur, String fullName) {
+	public static ArrayList<String> getInfosFromCursorAndPreferences(ContentResolver cr, SharedPreferences settings, String contactId, String fullName) {
     	ArrayList<String> infos = new ArrayList<String>();
-    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
-        
-    	String contactId = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
+    	
+    	HashSet<String> projection = new HashSet<String>();
+    	StringBuilder where = new StringBuilder();
+    	ArrayList<String> whereArgs = new ArrayList<String>();
+    	ArrayList<String> dataFields = new ArrayList<String>();
     	
     	if (settings.getBoolean("full_name", true)) {
         	if (null != fullName) {
@@ -55,60 +53,70 @@ public class Contact {
         }
     	
     	if (settings.getBoolean("email", true)) {
-    		infos.addAll(_getContactData(cr, contactId, 
-    				ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE, 
-    				ContactsContract.CommonDataKinds.Email.DATA));
+    		whereArgs.add(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
+    		dataFields.add(ContactsContract.CommonDataKinds.Email.DATA);
     	}
     	
     	if (settings.getBoolean("phone", true)) {
-    		infos.addAll(_getContactData(cr, contactId, 
-    				ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE, 
-    				ContactsContract.CommonDataKinds.Phone.NUMBER));
+    		whereArgs.add(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+    		dataFields.add(ContactsContract.CommonDataKinds.Phone.NUMBER);
     	}
     	
     	if (settings.getBoolean("nickname", true)) {
-    		infos.addAll(_getContactData(cr, contactId, 
-    				ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE, 
-    				ContactsContract.CommonDataKinds.Nickname.NAME));
+    		whereArgs.add(ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE);
+    		dataFields.add(ContactsContract.CommonDataKinds.Nickname.NAME);
     	}
     	
     	if (settings.getBoolean("url", true)) {
- 	       infos.addAll(_getContactData(cr, contactId, 
- 	    		   ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE, 
- 	    		   ContactsContract.CommonDataKinds.Website.URL));
+    		whereArgs.add(ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE);
+    		dataFields.add(ContactsContract.CommonDataKinds.Website.URL);
     	}
     	
     	if (settings.getBoolean("instant_message", true)) {
-    		infos.addAll(_getContactData(cr, contactId, 
-    				ContactsContract.CommonDataKinds.Im.CONTENT_ITEM_TYPE, 
-    				ContactsContract.CommonDataKinds.Im.DATA));
+    		whereArgs.add(ContactsContract.CommonDataKinds.Im.CONTENT_ITEM_TYPE);
+    		dataFields.add(ContactsContract.CommonDataKinds.Im.DATA);
     	}
     	
     	if (settings.getBoolean("note", true)) {
-    		infos.addAll(_getContactData(cr, contactId, 
-    				ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE, 
-    				ContactsContract.CommonDataKinds.Note.NOTE));
+    		whereArgs.add(ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE);
+    		dataFields.add(ContactsContract.CommonDataKinds.Note.NOTE);
     	}
     	
     	
+    	if (whereArgs.size() > 0){
+    		where.append(ContactsContract.Data.CONTACT_ID + " = ? ");
+    		where.append("AND ( ");
+    		where.append(ContactsContract.Data.MIMETYPE + " = ? ");
+    		for (int i = 1 ; i < whereArgs.size() ; ++i) {
+    			where.append(" OR ");
+    			where.append(ContactsContract.Data.MIMETYPE + " = ? ");
+    		}
+    		where.append(")");
+    	
+	    	projection.addAll(dataFields); // remove duplicates, push into a hashset
+	    	projection.add(ContactsContract.Data.MIMETYPE);
+	    	whereArgs.add(0, contactId); // put contact id in first position
+	    	
+	    	Cursor infoCur = cr.query(
+				ContactsContract.Data.CONTENT_URI, projection.toArray(new String[projection.size()]), 
+				where.toString(), whereArgs.toArray(new String[whereArgs.size()]), null);
+			
+	    	while (infoCur.moveToNext()) {
+				String mimetype = infoCur.getString(infoCur.getColumnIndex(ContactsContract.Data.MIMETYPE));
+				for (int i = 1 ; i < whereArgs.size() ; ++i) {
+					if (mimetype.equals(whereArgs.get(i))) {
+						String info = infoCur.getString(infoCur.getColumnIndex(dataFields.get(i-1)));
+						if (null != info) {
+							infos.add(info);
+						}
+						i++;
+						break;
+					}
+				}
+	        }
+	        infoCur.close();
+    	}
         return infos;
     }
-    
-
-	protected static ArrayList<String> _getContactData(ContentResolver cr, String contactId, String contentItemType, String dataField) {
-		ArrayList<String> infos = new ArrayList<String>();
-		Cursor cur = cr.query(
-			ContactsContract.Data.CONTENT_URI , null, 
-			ContactsContract.Data.CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE + " = ?", 
- 		    new String[]{contactId, contentItemType}, null);
-        while (cur.moveToNext()) {
-        	  String info = cur.getString(cur.getColumnIndex(dataField));
-        	  if (null != info) {
-        		  infos.add(info);
-        	  }
-        }
-        cur.close();
-		return infos;
-	}
 	
 }

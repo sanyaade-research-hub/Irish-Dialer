@@ -23,11 +23,11 @@ public class ContactAdapter extends BaseAdapter /*implements OnClickListener*/ {
 	}*/
  
     protected Context _context;
-    protected List<Contact> _contactList;
+    protected List<IContact> _contactList;
  
-    public ContactAdapter(Context context, List<Contact> contactList ) {
+    public ContactAdapter(Context context, List<IContact> displayContactList ) {
         this._context = context;
-        this._contactList = contactList;
+        this._contactList = displayContactList;
     }
  
     public int getCount() {
@@ -45,16 +45,20 @@ public class ContactAdapter extends BaseAdapter /*implements OnClickListener*/ {
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
-        Contact contact = _contactList.get(position);
+        IContact contact = _contactList.get(position);
         
         LayoutInflater inflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View v = inflater.inflate(R.layout.contact_adapter_view, null); 
+        View v = inflater.inflate(R.layout.contact_adapter_view, null);
         
         TextView textViewDisplayName = (TextView) v.findViewById(R.id.textViewDisplayName);
-        textViewDisplayName.setText(contact.getDisplayName());
+        textViewDisplayName.setText(contact.getFullName());
         
         TextView textViewInfos = (TextView) v.findViewById(R.id.textViewInfos);
-        textViewInfos.setText(contact.getInfos().toString());
+        textViewInfos.setText(contact.getFields().toString());
+ 
+        /*NumericPadMatch npm = new NumericPadMatch("2334");
+        textViewInfos.setText(""+npm.match("àdéIlm&n,o.o-o"));*/
+        
         //v.setBackgroundColor((position % 2) == 1 ? Color.rgb(50,50,50) : Color.BLACK);
  
         /*v.setOnClickListener(new OnItemClickListener(position));*/
