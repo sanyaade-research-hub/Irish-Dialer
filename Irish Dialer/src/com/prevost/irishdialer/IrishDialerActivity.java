@@ -1,16 +1,11 @@
 package com.prevost.irishdialer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.provider.ContactsContract;
-import android.provider.ContactsContract.Contacts;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,11 +19,9 @@ import android.widget.ListView;
 
 public class IrishDialerActivity extends Activity {
 	protected final String TAG = "IrishDialer";
-	protected EditText _search = null;
-	protected ListView _contacsView = null;
-	protected int _maxContact = 30;
-	protected List<IContact> _displayContactList = null;
-	protected IContactSearchIndex _contactSearchIndex = null;
+	protected EditText _searchBox = null;
+	protected ListView _contactListView = null;
+	protected ISearchIndex<IContact> _contactSearchIndex = null;
 	
 	// search related properties
 	
@@ -36,15 +29,21 @@ public class IrishDialerActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        _contactSearchIndex = new NumericPadContactSearchIndex(settings);
+    	
         setContentView(R.layout.main);
         // load search view only once
-        _search 		= (EditText)findViewById(R.id.search);
-        _contacsView	= (ListView)findViewById(R.id.contacts);
-        _displayContactList 	= new ArrayList<IContact>();
-
-		loadAllContacts();
+        this._searchBox 		= (EditText)findViewById(R.id.search);
+        
+        // init contact list view
+        this._contactListView	= (ListView)findViewById(R.id.contacts);
+    	ContactAdapter contactAdapter = new ContactAdapter(getBaseContext());
+    	this._contactListView.setAdapter(contactAdapter);
+		
+        
+        // load all contacts
+        this._initSearchIndex();
+        
+        // display loaded contacts
         reloadContactListView();
     }
     
@@ -72,59 +71,67 @@ public class IrishDialerActivity extends Activity {
     
     
     public String getQueryString() {
-    	return _search.getText().toString();
+    	return _searchBox.getText().toString();
     }
     
     
     public void numberClicked(View view) {
     	 Button b = (Button) view;
-    	 _search.append(b.getText().subSequence(0, 1));
+    	 _searchBox.append(b.getText().subSequence(0, 1));
     	 reloadContactListView();
     }
     
     public void deleteClicked(View view) {
-    	CharSequence s = _search.getText();
+    	CharSequence s = _searchBox.getText();
     	int l = s.length();
     	if (l > 0) {
-    		_search.setTextKeepState(s.subSequence(0, l - 1));
+    		_searchBox.setTextKeepState(s.subSequence(0, l - 1));
     	}
    	 	reloadContactListView();
    }
     
     public void reloadContactListView() {
-    	this._displayContactList = this._contactSearchIndex.search(this.getQueryString());
-    	
-    	ContactAdapter contactAdapter =  new ContactAdapter(getBaseContext(), _displayContactList);
-    	_contacsView.setAdapter(contactAdapter);
+    	Log.v(TAG, "reloading");
+    	List<IContact> newContactList = this._contactSearchIndex.search(this.getQueryString());
+    	ContactAdapter contactAdapter = (ContactAdapter) this._contactListView.getAdapter();
+    	contactAdapter.setContactList(newContactList);
     }
     
-    
-    public void loadAllContacts(){
-
-    	Log.v(TAG, "Loading all contacts");
-    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    	Cursor cur = getContentResolver().query(Contacts.CONTENT_URI, 
-    			new String[]{ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 
-    			null, null, ContactsContract.Contacts.DISPLAY_NAME);
-    	
-    	int n = cur.getCount();
-    	int id = 0;
-    	ArrayList<String> infos = null;
-    	String displayName = null;
-    	cur.moveToFirst();
-    	Contact contact = null;
-    	
-    	for (int i = 0 ; (i < n) ; i++) {
-    		displayName = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-    		id = cur.getInt(cur.getColumnIndex(ContactsContract.Contacts._ID));
-    		//infos = Contact.getInfosFromCursorAndPreferences(getContentResolver(), settings, String.valueOf(id), displayName);
-    		contact = new Contact(id, displayName, infos);
-    		_contactSearchIndex.addContact(contact, settings);
-    		_displayContactList.add(contact);
-    		cur.moveToNext();
+    protected void _initSearchIndex() {
+    	final Object data = getLastNonConfigurationInstance();
+        
+        // The activity is starting for the first time, load the photos from Flickr
+        if (data == null) {
+            _contactSearchIndex = new NumericPadContactSearchIndex();
+            ContactDatasource dataSource = new ContactDatasource(this.getBaseContext());
+            
+            for (IContact contact: dataSource.getAllContacts()) {
+            	_contactSearchIndex.add(contact);
+    		}
+        } else {
+        	// The activity was destroyed/created automatically
+        	_contactSearchIndex = (NumericPadContactSearchIndex) data;
         }
-    	Log.v(TAG, "Loaded contacts");
-    	Log.v(TAG, "Contact list size : " + Integer.toString(_displayContactList.size()));
     }
     
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+    	// when the activity is destroyed, save the search index
+    	// on rotate, low battery shut down, ...
+        return _contactSearchIndex;
+    }
+    
+    protected void _initStrictMode() {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork()   // or .detectAll() for all detectable problems
+                    .penaltyLog()
+                    .build());
+            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                    .detectLeakedSqlLiteObjects()
+                    .penaltyLog()
+                    .penaltyDeath()
+                    .build());
+    }
 }

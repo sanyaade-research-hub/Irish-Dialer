@@ -2,6 +2,7 @@ package com.prevost.irishdialer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import android.content.ContentResolver;
 import android.content.SharedPreferences;
@@ -22,12 +23,12 @@ public class Contact implements IContact{
 		return _id;
 	}
 	
-	public ArrayList<String> getInfos() {
+	public List<String> getInfos() {
 		return _infos;
 	}
 	
-	public ArrayList<String> getFields() {
-		ArrayList<String> res = this.getInfos();
+	public List<String> getFields() {
+		List<String> res = new ArrayList<String>(this.getInfos());
 		res.add(this.getId());
 		return res;
 	}

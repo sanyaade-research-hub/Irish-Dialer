@@ -5,22 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import android.content.SharedPreferences;
-
-public class NumericPadContactSearchIndex implements IContactSearchIndex {
+public class NumericPadContactSearchIndex implements ISearchIndex<IContact> {
 	protected final String TAG = "IrishDialer";
 
-	protected HashMap<String, NumericPadContactAdapter> _contactMap = new HashMap<String, NumericPadContactAdapter>();
-	protected SharedPreferences _settings = null;
+	protected HashMap<String, NumericPadContact> _contactMap = new HashMap<String, NumericPadContact>();
 	protected NumericPadContactMatch _match = new NumericPadContactMatch(); 
-	
-	public NumericPadContactSearchIndex(SharedPreferences settings) {
-		this._settings = settings;
-	}
 	
 	public List<IContact> search(String querystr) {
 		List<IContact> res = new ArrayList<IContact>(); 
-		for (Map.Entry<String, NumericPadContactAdapter> entry : _contactMap.entrySet()){
+		for (Map.Entry<String, NumericPadContact> entry : _contactMap.entrySet()){
 			if (this._match.match(entry.getValue(), querystr)) {
 				res.add(entry.getValue());
 			}
@@ -28,11 +21,10 @@ public class NumericPadContactSearchIndex implements IContactSearchIndex {
 		return res;
 	}
 	
-	
-	
-	public void addContact(IContact c, SharedPreferences settings) {
-		NumericPadContactAdapter contactAdapter = new NumericPadContactAdapter(c);
-		_contactMap.put(contactAdapter.getId(), contactAdapter);
+	@Override
+	public void add(IContact c) {
+		NumericPadContact contact = (NumericPadContact) c;
+		_contactMap.put(contact.getId(), contact);
 	}
 	
 }

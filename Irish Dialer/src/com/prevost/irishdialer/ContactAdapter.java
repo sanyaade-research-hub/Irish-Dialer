@@ -1,5 +1,6 @@
 package com.prevost.irishdialer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
@@ -10,64 +11,79 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 
-public class ContactAdapter extends BaseAdapter /*implements OnClickListener*/ {
+public class ContactAdapter extends BaseAdapter{
  
-	/*private class OnItemClickListener implements OnClickListener{
-	    private int mPosition;
-	    OnItemClickListener(int position){
-	            mPosition = position;
-	    }
-	    public void onClick(View arg0) {
-	            Log.v("ddd", "onItemClick at position" + mPosition);
-	    }
-	}*/
+    protected List<IContact> _contactList = null;
+    protected ViewHolder _viewHolder = null;
  
-    protected Context _context;
-    protected List<IContact> _contactList;
- 
-    public ContactAdapter(Context context, List<IContact> displayContactList ) {
-        this._context = context;
-        this._contactList = displayContactList;
+    public ContactAdapter(Context context) {
+        this._contactList = new ArrayList<IContact>();
+        this._initViewHolder(context);
     }
  
-    public int getCount() {
-        return _contactList.size();
-    }
- 
-    public Object getItem(int position) {
-        return _contactList.get(position);
-    }
- 
-    public long getItemId(int position) {
-        return position;
-    }
  
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
         IContact contact = _contactList.get(position);
+     
+        this._viewHolder.displayName.setText(contact.getFullName());
         
-        LayoutInflater inflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View v = inflater.inflate(R.layout.contact_adapter_view, null);
-        
-        TextView textViewDisplayName = (TextView) v.findViewById(R.id.textViewDisplayName);
-        textViewDisplayName.setText(contact.getFullName());
-        
-        TextView textViewInfos = (TextView) v.findViewById(R.id.textViewInfos);
-        textViewInfos.setText(contact.getFields().toString());
+        List<String> fields = contact.getFields();
+        this._viewHolder.infos.setText(this._implodeStringList(fields, ";").toString());
+
+        return this._viewHolder.contactView;
+    }
  
-        /*NumericPadMatch npm = new NumericPadMatch("2334");
-        textViewInfos.setText(""+npm.match("àdéIlm&n,o.o-o"));*/
+    public void setContactList(List<IContact> contactList) {
+    	this.notifyDataSetInvalidated();
+    	this._contactList = contactList;
+    	this.notifyDataSetChanged();
+    }
+    
+    protected String _implodeStringList(List<String> strLst, String glue) {
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(glue);
+		for (String str : strLst) {
+    		sb.append(str);
+			sb.append(glue);
+		}
+		return sb.toString();
+    }
+    
+    protected void _initViewHolder(Context context) {
+    	this._viewHolder = new ViewHolder();
+    	
+    	LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    	this._viewHolder.contactView = inflater.inflate(R.layout.contact_adapter_view, null);
         
-        //v.setBackgroundColor((position % 2) == 1 ? Color.rgb(50,50,50) : Color.BLACK);
- 
-        /*v.setOnClickListener(new OnItemClickListener(position));*/
-        return v;
+        this._viewHolder.displayName = (TextView) this._viewHolder.contactView.findViewById(R.id.textViewDisplayName);
+        this._viewHolder.infos = (TextView) this._viewHolder.contactView.findViewById(R.id.textViewInfos);
+    }
+    
+    protected static class ViewHolder {
+    	View contactView;
+    	TextView displayName;
+    	TextView infos;
     }
 
-    /*public void onClick(View v) {
-            Log.v(LOG_TAG, "Row button clicked");
-    }*/
+
+	@Override
+    public int getCount() {
+        return _contactList.size();
+    }
+
+	@Override
+    public Object getItem(int position) {
+        return _contactList.get(position);
+    }
+ 
+
+	@Override
+    public long getItemId(int position) {
+        return position;
+    }
  
 }
  

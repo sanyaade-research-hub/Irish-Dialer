@@ -13,7 +13,7 @@ public class NumericPadContactMatch implements IContactMatch {
 	
 	@Override
 	public boolean match(IContact contact, String query) {
-		NumericPadContactAdapter contactAdapter = (NumericPadContactAdapter) contact;
+		NumericPadContact contactAdapter = (NumericPadContact) contact;
 		int index = contactAdapter.getNumerifiedString().indexOf(query);
 		if (index >= 0) {
 			return true;
