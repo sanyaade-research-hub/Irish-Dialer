@@ -1,4 +1,4 @@
-Irish Dialer/bin
-Irish Dialer/gen
-Irish Dialer/.euml2
-Irish Dialer/.umlproject
+bin
+gen
+.classpath
+.project
