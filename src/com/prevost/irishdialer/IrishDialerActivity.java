@@ -4,6 +4,7 @@ import java.util.List;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
@@ -20,8 +21,9 @@ import android.widget.ListView;
 public class IrishDialerActivity extends Activity {
 	protected final String TAG = "IrishDialer";
 	protected EditText _searchBox = null;
-	protected ListView _contactListView = null;
+	protected ContactAdapter _contactAdapter = null;
 	protected ISearchIndex<IContact> _contactSearchIndex = null;
+	protected ContactSearchTask _searchTask = null;
 	
 	// search related properties
 	
@@ -33,14 +35,16 @@ public class IrishDialerActivity extends Activity {
     	
         setContentView(R.layout.main);
         // load search view only once
-        this._searchBox 		= (EditText)findViewById(R.id.search);
+        this._searchBox = (EditText)findViewById(R.id.search);
         
         // init contact list view
-        this._contactListView	= (ListView)findViewById(R.id.contacts);
-    	ContactAdapter contactAdapter = new ContactAdapter(getBaseContext());
-    	this._contactListView.setAdapter(contactAdapter);
-		
+        ListView listView = (ListView)findViewById(R.id.contacts);
+    	this._contactAdapter = new ContactAdapter(getBaseContext());
+    	listView.setAdapter(this._contactAdapter);
         
+    	// init search task
+    	this._searchTask = new ContactSearchTask();
+    	
         // load all contacts
         this._initSearchIndex();
         
@@ -93,9 +97,15 @@ public class IrishDialerActivity extends Activity {
     
     public void reloadContactListView() {
     	Log.v(TAG, "reloading");
-    	List<IContact> newContactList = this._contactSearchIndex.search(this.getQueryString());
-    	ContactAdapter contactAdapter = (ContactAdapter) this._contactListView.getAdapter();
-    	contactAdapter.setContactList(newContactList);
+    	
+    	// cancel current task anyway
+    	this._searchTask.cancel(false);
+
+    	// create new task, can't execute multiple times a task
+    	this._searchTask = new ContactSearchTask();
+
+    	// reload contact view
+		this._searchTask.execute(this.getQueryString());
     }
     
     protected void _initSearchIndex() {
@@ -134,5 +144,19 @@ public class IrishDialerActivity extends Activity {
                     .penaltyLog()
                     .penaltyDeath()
                     .build());
+    }
+    
+    private class ContactSearchTask extends AsyncTask<String, Integer, List<IContact>> {
+        protected List<IContact> doInBackground(String... querys) {
+	    	Log.v(TAG, "reloading");
+	    	List<IContact> searchResults = _contactSearchIndex.search(querys[0]);
+	    	//List<IContact> searchResults = new ArrayList<IContact>();
+            return searchResults;
+        }
+
+        protected void onPostExecute(List<IContact> searchResults) {
+	    	_contactAdapter.setContactList(searchResults);
+            Log.v(TAG,"Downloaded " + searchResults.size() + " bytes");
+        }
     }
 }
