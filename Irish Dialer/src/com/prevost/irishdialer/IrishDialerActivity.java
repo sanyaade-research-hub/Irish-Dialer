@@ -29,6 +29,7 @@ public class IrishDialerActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this._initStrictMode();
     	
         setContentView(R.layout.main);
         // load search view only once

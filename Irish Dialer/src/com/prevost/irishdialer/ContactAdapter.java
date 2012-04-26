@@ -14,25 +14,39 @@ import android.widget.TextView;
 public class ContactAdapter extends BaseAdapter{
  
     protected List<IContact> _contactList = null;
-    protected ViewHolder _viewHolder = null;
+    protected LayoutInflater _layoutInflater = null;
  
     public ContactAdapter(Context context) {
         this._contactList = new ArrayList<IContact>();
-        this._initViewHolder(context);
+        this._layoutInflater = LayoutInflater.from(context);
     }
- 
  
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
+    	View v = null;
+    	// reuse views
+    	if (convertView == null) {
+    		ViewHolder vh = new ViewHolder();
+    	
+	    	v = this._layoutInflater.inflate(R.layout.contact_adapter_view, null);
+	        vh.contactView = v;
+	        vh.displayName = (TextView) v.findViewById(R.id.textViewDisplayName);
+	        vh.infos = (TextView) v.findViewById(R.id.textViewInfos);
+	        v.setTag(vh);
+    	} else {
+    		v = convertView;
+    	}
+    	
         IContact contact = _contactList.get(position);
-     
-        this._viewHolder.displayName.setText(contact.getFullName());
+        ViewHolder vh = (ViewHolder) v.getTag();
+        
+        vh.displayName.setText(contact.getFullName());
         
         List<String> fields = contact.getFields();
-        this._viewHolder.infos.setText(this._implodeStringList(fields, ";").toString());
+        vh.infos.setText(this._implodeStringList(fields, ";").toString());
 
-        return this._viewHolder.contactView;
+        return v;
     }
  
     public void setContactList(List<IContact> contactList) {
@@ -52,22 +66,11 @@ public class ContactAdapter extends BaseAdapter{
 		return sb.toString();
     }
     
-    protected void _initViewHolder(Context context) {
-    	this._viewHolder = new ViewHolder();
-    	
-    	LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    	this._viewHolder.contactView = inflater.inflate(R.layout.contact_adapter_view, null);
-        
-        this._viewHolder.displayName = (TextView) this._viewHolder.contactView.findViewById(R.id.textViewDisplayName);
-        this._viewHolder.infos = (TextView) this._viewHolder.contactView.findViewById(R.id.textViewInfos);
-    }
-    
     protected static class ViewHolder {
     	View contactView;
     	TextView displayName;
     	TextView infos;
     }
-
 
 	@Override
     public int getCount() {

@@ -1,10 +1,10 @@
 package com.prevost.irishdialer;
 
-import java.util.HashMap;
 import java.text.Normalizer;
+import java.util.HashMap;
 
 public class NumericPadContactMatch implements IContactMatch {
-
+	protected final String TAG = "IrishDialer";
 	protected HashMap<Character, Character> _pad = null;
 	
 	public NumericPadContactMatch() {
@@ -22,23 +22,29 @@ public class NumericPadContactMatch implements IContactMatch {
 	}
 
 	public String numerify(CharSequence s) {
-		CharSequence norm = Normalizer
-				.normalize(s, Normalizer.Form.NFD) 
-				.replaceAll("[^\\p{ASCII}]", "")
-				.replaceAll("[^a-zA-Z0-9',-]", " ")
-				.toUpperCase();
-		
-		StringBuilder res = new StringBuilder();
-		Character c = null;
-		
-		for (int i = 0 ; i < norm.length() ; i++) {
-			c = _pad.get(norm.charAt(i));
-			if (c != null) {
-				res.append(c);
+		String numerified = null;
+		if (s != null) {
+			CharSequence norm = Normalizer
+					.normalize(s, Normalizer.Form.NFKD) 
+					.replaceAll("[^\\p{ASCII}]", "")
+					.replaceAll("[^a-zA-Z0-9',-]", "")
+					.toUpperCase();
+			
+			StringBuilder res = new StringBuilder();
+			Character c = null;
+			
+			for (int i = 0 ; i < norm.length() ; i++) {
+				c = _pad.get(norm.charAt(i));
+				if (c != null) {
+					res.append(c);
+				}
 			}
+			numerified = res.toString();
+		} else {
+			numerified = "";
 		}
 		
-		return res.toString();
+		return numerified;
 	}
 	
 	protected void _initPadHashMap() {

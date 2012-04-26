@@ -29,7 +29,7 @@ public class Contact implements IContact{
 	
 	public List<String> getFields() {
 		List<String> res = new ArrayList<String>(this.getInfos());
-		res.add(this.getId());
+		res.add(this.getFullName());
 		return res;
 	}
 	

@@ -37,7 +37,6 @@ public class ContactDatasource{
     		id = cur.getInt(cur.getColumnIndex(ContactsContract.Contacts._ID));
     		//infos = Contact.getInfosFromCursorAndPreferences(getContentResolver(), settings, String.valueOf(id), displayName);
     		infos = new ArrayList<String>();
-    		infos.add("OMG");
     		contact = new NumericPadContact(id, displayName, infos);
     		contactList.add(contact);
     		cur.moveToNext();
