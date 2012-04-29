@@ -15,11 +15,11 @@ public class NumericPadContact extends Contact {
 
 	public static final String IMPOSSIBLE_TO_MATCH_CHAR = "^";
 	protected String _numerified = "";
-	protected NumericPadContactMatch _match = null;
+	protected NumericPadContactMatch _match = new NumericPadContactMatch();
 
 	public NumericPadContact(int id, String displayName, List<ContactField> infos, SharedPreferences settings) {
 		super(id, displayName, infos, settings);
-		_match = new NumericPadContactMatch();
+		_computeNumerified();
 	}
 	
 	public String getNumerifiedString() {
@@ -33,10 +33,13 @@ public class NumericPadContact extends Contact {
 	}
 	
 	protected void _computeNumerified() {
-		NumericPadContactMatch match = (_match == null) ? new NumericPadContactMatch() : _match; 
-		for (ContactField field : this.getEnabledFields()) {
-			this._numerified += match.numerify(field.getValue());
-			this._numerified += IMPOSSIBLE_TO_MATCH_CHAR;
+		if (_match != null) {
+			StringBuilder sb = new StringBuilder();
+			for (ContactField field : this.getEnabledFields()) {
+				sb.append(_match.numerify(field.getValue()));
+				sb.append(IMPOSSIBLE_TO_MATCH_CHAR);
+			}
+			this._numerified = sb.toString();
 		}
 	}
 }
