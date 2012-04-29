@@ -4,9 +4,12 @@ import java.util.List;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -16,14 +19,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
-
-
 public class IrishDialerActivity extends Activity {
 	protected final String TAG = "IrishDialer";
 	protected EditText _searchBox = null;
 	protected ContactAdapter _contactAdapter = null;
 	protected ISearchIndex<IContact> _contactSearchIndex = null;
 	protected ContactSearchTask _searchTask = null;
+	protected ReloadContactOnPreferenceChangeTask _reloadContactEnableFieldsTask = null;
+	protected OnSharedPreferenceChangeListener _preferenceChangeListener = null;
 	
 	// search related properties
 	
@@ -42,11 +45,15 @@ public class IrishDialerActivity extends Activity {
     	this._contactAdapter = new ContactAdapter(getBaseContext());
     	listView.setAdapter(this._contactAdapter);
         
-    	// init search task
+    	// init tasks
     	this._searchTask = new ContactSearchTask();
+    	this._reloadContactEnableFieldsTask = new ReloadContactOnPreferenceChangeTask();
     	
         // load all contacts
         this._initSearchIndex();
+
+        // handle preference change
+        this._initReloadContactOnPreferenceChange();
         
         // display loaded contacts
         reloadContactListView();
@@ -96,8 +103,6 @@ public class IrishDialerActivity extends Activity {
    }
     
     public void reloadContactListView() {
-    	Log.v(TAG, "reloading");
-    	
     	// cancel current task anyway
     	this._searchTask.cancel(false);
 
@@ -113,10 +118,13 @@ public class IrishDialerActivity extends Activity {
         
         // The activity is starting for the first time, load the photos from Flickr
         if (data == null) {
-            _contactSearchIndex = new NumericPadContactSearchIndex();
-            ContactDatasource dataSource = new ContactDatasource(this.getBaseContext());
             
-            for (IContact contact: dataSource.getAllContacts()) {
+            // init settings
+        	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+            _contactSearchIndex = new NumericPadContactSearchIndex();
+            ContactDatasource dataSource = new ContactDatasource();
+            
+            for (IContact contact: dataSource.getAllContacts(getContentResolver(), settings)) {
             	_contactSearchIndex.add(contact);
     		}
         } else {
@@ -148,15 +156,43 @@ public class IrishDialerActivity extends Activity {
     
     private class ContactSearchTask extends AsyncTask<String, Integer, List<IContact>> {
         protected List<IContact> doInBackground(String... querys) {
-	    	Log.v(TAG, "reloading");
 	    	List<IContact> searchResults = _contactSearchIndex.search(querys[0]);
-	    	//List<IContact> searchResults = new ArrayList<IContact>();
             return searchResults;
         }
 
         protected void onPostExecute(List<IContact> searchResults) {
 	    	_contactAdapter.setContactList(searchResults);
-            Log.v(TAG,"Downloaded " + searchResults.size() + " bytes");
         }
     }
+    
+    
+    
+
+    protected void _initReloadContactOnPreferenceChange() {
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    	_preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+			public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+		    	// cancel current task anyway
+		    	_reloadContactEnableFieldsTask.cancel(true);
+
+		    	// create new task, can't execute multiple times a task
+		    	_reloadContactEnableFieldsTask = new ReloadContactOnPreferenceChangeTask();
+
+		    	// reload contact view
+		    	_reloadContactEnableFieldsTask.execute(prefs);
+			}
+		};
+	
+		prefs.registerOnSharedPreferenceChangeListener(_preferenceChangeListener);
+    }
+    
+    private class ReloadContactOnPreferenceChangeTask extends AsyncTask<SharedPreferences, Void, Void> {
+		@Override
+    	protected Void doInBackground(SharedPreferences... params) {
+			Log.v(TAG, "Reloading contacts enable fields");
+			_contactSearchIndex.reloadEnabledContactsFields(params[0]);
+			return null;
+		}
+    }
+    
 }

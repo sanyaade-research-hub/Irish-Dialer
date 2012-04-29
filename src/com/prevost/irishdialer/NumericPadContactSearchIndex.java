@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.content.SharedPreferences;
+
 public class NumericPadContactSearchIndex implements ISearchIndex<IContact> {
 	protected final String TAG = "IrishDialer";
 
@@ -25,6 +27,13 @@ public class NumericPadContactSearchIndex implements ISearchIndex<IContact> {
 	public void add(IContact c) {
 		NumericPadContact contact = (NumericPadContact) c;
 		_contactMap.put(contact.getId(), contact);
+	}
+
+	@Override
+	public void reloadEnabledContactsFields(SharedPreferences settings) {
+		for (IContact contact : _contactMap.values()) {
+			contact.reloadEnabledFields(settings);
+		}
 	}
 	
 }

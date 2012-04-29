@@ -1,17 +1,16 @@
 package com.prevost.irishdialer;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
-import android.content.ContentResolver;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.provider.ContactsContract;
 
 public class Contact implements IContact{
 
-	protected ArrayList<String> _infos = null; 
+	protected final String TAG = "IrishDialer";
+	
+
+	protected List<ContactField> _fields = null; 
+	protected List<ContactField> _enabledFields = null;
 	protected String _displayName = null;
 	protected String _id = null;
 	
@@ -23,22 +22,30 @@ public class Contact implements IContact{
 		return _id;
 	}
 	
-	public List<String> getInfos() {
-		return _infos;
+	public List<ContactField> getFields() {
+		return _fields;
 	}
 	
-	public List<String> getFields() {
-		List<String> res = new ArrayList<String>(this.getInfos());
-		res.add(this.getFullName());
-		return res;
+	public List<ContactField> getEnabledFields() {
+		return _enabledFields;
 	}
 	
-	public Contact(int id, String displayName, ArrayList<String> contactInfos) {
-		_infos = contactInfos;
+	public Contact(int id, String displayName, List<ContactField> infos, SharedPreferences settings) {
+		_fields = infos;
 		_displayName = displayName;
 		_id = Integer.toString(id);
+		_fields.add(new ContactField("full_name", displayName));
+		this.reloadEnabledFields(settings);
 	}
 	
+	@Override
+	public void reloadEnabledFields(SharedPreferences settings) {
+		// TODO Auto-generated method stub
+		ContactFieldPreferencesMap prefMap = new ContactFieldPreferencesMap(settings);
+		_enabledFields = prefMap.filter(_fields);
+	}
+	
+	/*
 	public static ArrayList<String> getInfosFromCursorAndPreferences(ContentResolver cr, SharedPreferences settings, String contactId, String fullName) {
     	ArrayList<String> infos = new ArrayList<String>();
     	
@@ -119,5 +126,6 @@ public class Contact implements IContact{
     	}
         return infos;
     }
-	
+	*/
+
 }

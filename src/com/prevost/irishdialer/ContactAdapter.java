@@ -43,8 +43,10 @@ public class ContactAdapter extends BaseAdapter{
         
         vh.displayName.setText(contact.getFullName());
         
-        List<String> fields = contact.getFields();
-        vh.infos.setText(this._implodeStringList(fields, ";").toString());
+        List<ContactField> fields = contact.getFields();
+        List<ContactField> enabledFields = contact.getEnabledFields();
+        
+        vh.infos.setText(this._implodeStringList(fields, ";").toString() + " ======= " + this._implodeStringList(enabledFields, "|").toString() + " ======= " + ((NumericPadContact)contact).getNumerifiedString());
 
         return v;
     }
@@ -55,12 +57,12 @@ public class ContactAdapter extends BaseAdapter{
     	this.notifyDataSetChanged();
     }
     
-    protected String _implodeStringList(List<String> strLst, String glue) {
+    protected String _implodeStringList(List<ContactField> fields, String glue) {
 
 		StringBuilder sb = new StringBuilder();
 		sb.append(glue);
-		for (String str : strLst) {
-    		sb.append(str);
+		for (ContactField field : fields) {
+    		sb.append(field.getValue());
 			sb.append(glue);
 		}
 		return sb.toString();
