@@ -10,4 +10,5 @@ public interface IContact {
 	public void reloadEnabledFields(SharedPreferences settings);
 	public String getFullName();
 	public String getId();
+	public List<String> getPhoneNumbers();
 }

@@ -48,7 +48,7 @@ public class ContactDatasource{
 	    		infos = this.getInfos(cr, id);
 	    		contact = new NumericPadContact((int)id, displayName, infos, settings);
 	    		contactList.add(contact);
-	        } while (cur.moveToNext());
+	        } while (cur.moveToNext() && contactList.size() < 20);
 	    }
 	
     	cur.close();

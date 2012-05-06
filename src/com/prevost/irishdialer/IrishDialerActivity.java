@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -15,11 +16,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
-public class IrishDialerActivity extends Activity {
+public class IrishDialerActivity extends Activity implements IClickListenerProvider{
 	protected final String TAG = "IrishDialer";
 	protected EditText _searchBox = null;
 	protected ContactAdapter _contactAdapter = null;
@@ -42,7 +44,7 @@ public class IrishDialerActivity extends Activity {
         
         // init contact list view
         ListView listView = (ListView)findViewById(R.id.contacts);
-    	this._contactAdapter = new ContactAdapter(getBaseContext());
+    	this._contactAdapter = new ContactAdapter(this, getBaseContext());
     	listView.setAdapter(this._contactAdapter);
         
     	// init tasks
@@ -193,6 +195,26 @@ public class IrishDialerActivity extends Activity {
 			_contactSearchIndex.reloadEnabledContactsFields(params[0]);
 			return null;
 		}
+    }
+    
+    public View.OnClickListener getSmsClickListener(final String phoneNumber) {
+    	return new View.OnClickListener() {
+            public void onClick(View v) {
+	           	Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("tel:"+phoneNumber));
+		        i.putExtra("address", phoneNumber);
+		        i.setType("vnd.android-dir/mms-sms");
+		        startActivity(i);
+            }
+        };
+    }
+    
+    public View.OnClickListener getCallClickListener(final String phoneNumber) {
+    	return new View.OnClickListener() {
+            public void onClick(View v) {
+				Intent i = new Intent(Intent.ACTION_CALL, Uri.parse("tel:"+phoneNumber));
+				startActivity(i);
+            }
+        };
     }
     
 }
